@@ -15,7 +15,7 @@ public class Store {
 
 		List<Item> items = new ArrayList<>();
 		for (int i=0; i<quantity; i++) {
-			if (quantity > 0) {
+			if (quantity >= 0) {
 				if (inventory.get(id) != null && !inventory.get(id).isEmpty()) {
 					items.add(inventory.get(id).remove(0));
 				} else {

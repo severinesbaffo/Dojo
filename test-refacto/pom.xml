@@ -49,25 +49,21 @@
                 </configuration>
             </plugin>
 
-
-
-
-
-
-			<plugin>
-				<groupId>org.pitest</groupId>
-				<artifactId>pitest-maven</artifactId>
-				<version>LATEST</version>
-				<configuration>
-					<targetClasses>
-						<param>dojo*</param>
-					</targetClasses>
-					<targetTests>
-						<param>dojo*</param>
-					</targetTests>
-					<timestampedReports>false</timestampedReports>
-				</configuration>
-			</plugin>
+            <!-- mvn org.pitest:pitest-maven:mutationCoverage -->
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>LATEST</version>
+                <configuration>
+                <targetClasses>
+                    <param>dojo*</param>
+                </targetClasses>
+                <targetTests>
+                    <param>dojo*</param>
+                </targetTests>
+                <timestampedReports>false</timestampedReports>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     
