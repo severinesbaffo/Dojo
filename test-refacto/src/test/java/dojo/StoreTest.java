@@ -7,6 +7,8 @@ import java.util.List;
 
 import org.junit.Test;
 
+
+@SuppressWarnings("unused")
 public class StoreTest {
 
 	
@@ -63,6 +65,12 @@ public class StoreTest {
 		Store store = new Store();
 		Item item = new Item("id-1");
 		store.add(item);
+		
+		try {
+			assertThat(store.getItems("id-1").get(0), equalTo(item));
+		} catch (ItemNotFoundException e) {
+			assertTrue(false);
+		}
 	}
 	
 	@Test
@@ -119,6 +127,41 @@ public class StoreTest {
 			assertTrue(true);
 		} catch (NoMoreItemException e) {
 			assertTrue(false);
+		}
+	}
+	
+	@Test
+	public void testPrint() {
+		Store store = new Store();
+		Item item1 = new Item("id-1");
+		Item item2 = new Item("id-1");
+		Item item3 = new Item("id-1");
+		Item item4 = new Item("id-2");
+		Item item5 = new Item("id-2");
+		Item item6 = new Item("id-3");
+		store.add(item1);
+		store.add(item2);
+		store.add(item3);
+		store.add(item4);
+		store.add(item5);
+		
+		String result = store.printInventory();
+		System.out.println(result);
+		String[] lines = result.split("\n");
+		for (String line : lines) {
+			if (line.lastIndexOf("-") != -1 ) {
+				String id = line.substring(0, line.lastIndexOf("-"));
+				int quantity = Integer.valueOf(line.substring(line.lastIndexOf("-")+1, line.length()));
+				if (id.equals("id-1")) {
+					assertThat(quantity, equalTo(3));
+				}
+				if (id.equals("id-2")) {
+					assertThat(quantity, equalTo(2));
+				}
+				if (id.equals("id-3")) {
+					assertThat(quantity, equalTo(1));
+				}
+			}
 		}
 	}
 

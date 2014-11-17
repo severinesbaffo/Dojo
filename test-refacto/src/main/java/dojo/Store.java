@@ -43,5 +43,13 @@ public class Store {
 		}
 		throw new ItemNotFoundException();
 	}
+	
+	public String printInventory() {
+		StringBuffer sb = new StringBuffer("Inventory :\n");
+		for (String id : inventory.keySet()){
+			sb.append(id).append("-").append(inventory.get(id).size()).append("\n");
+		}
+		return sb.toString();
+	}
 
 }
