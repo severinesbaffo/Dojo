@@ -1,23 +1,30 @@
 package dojo;
 
-import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
 public class Store {
 	
-	private Map<String, List<Item>> inventory = new HashMap<>();
+	private Map<String, Integer> inventory = new HashMap<>();
+	private Map<String, Float> prices = new HashMap<>();
 	
+	
+	public SellReport sell(String id, int quantity) throws ItemNotFoundException, NoMoreItemException {
 
-	public List<Item> sell(String id, int quantity) throws ItemNotFoundException, NoMoreItemException {
-
-		List<Item> items = new ArrayList<>();
+		int items = 0;
 		for (int i=0; i<quantity; i++) {
 			if (quantity >= 0) {
-				if (inventory.get(id) != null && !inventory.get(id).isEmpty()) {
-					items.add(inventory.get(id).remove(0));
+				if (inventory.get(id) != null ) {
+					int total = inventory.get(id);
+					if (total > 0) {
+						items ++;
+						total --;
+						inventory.put(id, total);
+					} else {
+						throw new NoMoreItemException();
+					}
 				} else {
 					throw new ItemNotFoundException();
 				}
@@ -25,19 +32,27 @@ public class Store {
 				throw new NoMoreItemException();
 			}
 		}
-		return items;
+		
+		return new SellReport(Calendar.getInstance(), quantity, inventory.get(id), items, prices.get(id));
 	}
 	
-	void add(Item item) {
-		List<Item> itemList = inventory.get(item.getId());
-		if (itemList == null) {
-			itemList = new ArrayList<>();
-			inventory.put(item.getId(), itemList);
+	public void registerItemPrice(String itemId, Float price) {
+		if (inventory.get(itemId) == null) {
+			inventory.put(itemId, 0);
+			prices.put(itemId, price);
+		} 
+		prices.put(itemId, price);
+	}
+	
+	void add(String itemId, int nb) {
+		Integer total = inventory.get(itemId);
+		if (total == null) {
+			total = 0;
 		}
-		itemList.add(item);
+		inventory.put(itemId, total+nb);
 	}
 	
-	public List<Item> getItems(String id) throws ItemNotFoundException {
+	public Integer getItems(String id) throws ItemNotFoundException {
 		if (inventory.get(id) != null) {
 			return inventory.get(id);
 		}
@@ -47,7 +62,7 @@ public class Store {
 	public String printInventory() {
 		StringBuffer sb = new StringBuffer("Inventory :\n");
 		for (String id : inventory.keySet()){
-			sb.append(id).append("-").append(inventory.get(id).size()).append("\n");
+			sb.append(id).append("-").append(inventory.get(id)).append("\n");
 		}
 		return sb.toString();
 	}

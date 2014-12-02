@@ -3,14 +3,14 @@ package dojo;
 public class Item {
 
 	
-	private String isbn;
+	private String id;
 	
-	public Item (String isbn) {
-		this.isbn = isbn;
+	public Item (String id) {
+		this.id = id;
 	}
 
 	public String getId() {
-		return isbn;
+		return id;
 	}
 
 }
