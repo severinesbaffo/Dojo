@@ -7,8 +7,8 @@ import java.util.Map;
 
 public class Store {
 	
-	private Map<String, Integer> inventory = new HashMap<>();
-	private Map<String, Float> prices = new HashMap<>();
+	private Map<String, Integer> inventory = new HashMap<String, Integer>();
+	private Map<String, Float> prices = new HashMap<String, Float>();
 	
 	
 	public SellReport sell(String id, int quantity) throws ItemNotFoundException, NoMoreItemException {
