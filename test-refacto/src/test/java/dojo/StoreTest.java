@@ -1,211 +1,132 @@
 package dojo;
 
 import static org.hamcrest.Matchers.*;
+
 import static org.junit.Assert.*;
 
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
 
-import org.junit.Test;
-
+import org.junit.*;
 
 @SuppressWarnings("unused")
 public class StoreTest {
 
-	
-	@Test
-	public void testGetNotFoundItem() {
+    private static final String ITEM_2 = "id-2";
+    private static final String ITEM_1 = "id-1";
+    private Store store;
 
-		Store store = new Store();
-		store.add("id-2", 2);
+    @Before
+    public void setUp() {
+        store = new Store();
+    }
 
-		checkGetItems(store, 0, true);
-	}
-	
-	@Test
-	public void testGetFindOneItem() {
+    @Test(expected = ItemNotFoundException.class)
+    public void testGetNotFoundItem() throws Exception {
+        store.add(ITEM_2, 2);
+        store.getNbItems(ITEM_1);
+    }
 
-		Store store = new Store();
-		store.add("id-1", 1);
+    @Test
+    public void testGetFindOneItem() throws Exception {
+        int nbItemsToAdd = 10;
+        store.add(ITEM_1, nbItemsToAdd);
 
-		checkGetItems(store, 1, false);
-	}
-	
-	@Test
-	public void testGetFindTwoItems() {
+        checkNbItem(ITEM_1, nbItemsToAdd);
+    }
 
-		Store store = new Store();
-		store.add("id-1", 2);
-		
-		checkGetItems(store, 2, false);
-	}
+    @Test
+    public void testGetAdd3Items() throws Exception {
 
-	private void checkGetItems(Store store, int size, boolean isNotFound) {
-		try {
-			int items = store.getItems("id-1");
-			if (!isNotFound) {
-				assertNotNull(items);
-				assertThat(items, equalTo(size));
-			}
-		} catch (ItemNotFoundException e) {
-			assertTrue(isNotFound);
-		}
-	}
+        store.add(ITEM_1, 1);
+        store.add(ITEM_1, 2);
 
-	@Test
-	public void testAdd() {
+        checkNbItem(ITEM_1, 3);
+    }
 
-		Store store = new Store();
-		Item item = new Item("id-1");
-		store.add("id-1", 1);
-		
-		try {
-			assertThat(store.getItems("id-1"), equalTo(1));
-		} catch (ItemNotFoundException e) {
-			assertTrue(false);
-		}
-	}
-	
-	@Test
-	public void testSellOk() {
-		Store store = new Store();
-		store.add("id-1", 1);
-		
-		try {
-			assertThat(store.getItems("id-1"), equalTo(1));
-			SellReport sellReport = store.sell("id-1", 1);
-			assertNotNull(sellReport);
-			assertThat(sellReport.getQuantity(), equalTo(1));
-			assertThat(sellReport.getRemainingItems(), equalTo(0));
-			assertThat(sellReport.getDate(), equalTo(Calendar.getInstance()));
-			int soldItems = sellReport.getSoldItems();
-			assertThat(soldItems, equalTo(1));
-			assertThat(sellReport.getTotalPrice(), equalTo("UNDEFINED"));
-		} catch (ItemNotFoundException e) {
-			assertTrue(false);
-		} catch (NoMoreItemException e) {
-			assertTrue(false);
-		}
-	}
-	
-	@Test
-	public void testSellOk2() {
-		Store store = new Store();
-		store.registerItemPrice("id-1", 3f);
-		store.add("id-1", 1);
-		
-		try {
-			assertThat(store.getItems("id-1"), equalTo(1));
-			SellReport sellReport = store.sell("id-1", 1);
-			assertNotNull(sellReport);
-			assertThat(sellReport.getQuantity(), equalTo(1));
-			assertThat(sellReport.getRemainingItems(), equalTo(0));
-			assertThat(sellReport.getDate(), equalTo(Calendar.getInstance()));
-			int soldItems = sellReport.getSoldItems();
-			assertThat(soldItems, equalTo(1));
-			assertThat(sellReport.getTotalPrice(), equalTo("3.0€"));
-		} catch (ItemNotFoundException e) {
-			assertTrue(false);
-		} catch (NoMoreItemException e) {
-			assertTrue(false);
-		}
-	}
-	
+    private void checkNbItem(String itemId, int expectedNbItems) throws ItemNotFoundException {
+        int nbItems = store.getNbItems(itemId);
+        assertThat(nbItems, equalTo(expectedNbItems));
+    }
 
-	@Test
-	public void testSellTwoItems() {
-		Store store = new Store();
-		store.add("id-1", 3);
-		
-		try {
-			assertThat(store.getItems("id-1"), equalTo(3));
-			SellReport sellReport = store.sell("id-1", 2);
-			assertThat(sellReport.getQuantity(), equalTo(2));
-			assertThat(sellReport.getRemainingItems(), equalTo(1));
-			assertThat(sellReport.getDate(), equalTo(Calendar.getInstance()));
-			int soldItems = sellReport.getSoldItems();
-			assertThat(soldItems, equalTo(2));
-		} catch (ItemNotFoundException e) {
-			assertTrue(false);
-		} catch (NoMoreItemException e) {
-			assertTrue(false);
-		}
-	}
-	
-	@Test
-	public void testSellNotFoundException() {
-		Store store = new Store();
-		store.add("id-1", 1);
-		
-		try {
-			store.sell("id-2", 1);
-		} catch (ItemNotFoundException e) {
-			assertTrue(true);
-		} catch (NoMoreItemException e) {
-			assertTrue(false);
-		}
-	}
-	
-	
-	@Test
-	public void testSellNoMore() {
-		Store store = new Store();
-		store.add("id-1", 1);
-		
-		try {
-			store.sell("id-1", 2);
-		} catch (ItemNotFoundException e) {
-			assertTrue(false);
-		} catch (NoMoreItemException e) {
-			assertTrue(true);
-		}
-	}
+    @Test
+    public void sellOneItemWithoutRegisteringPrice() throws Exception {
+        store.add(ITEM_1, 1);
+        SellReport sellReport = store.sell(ITEM_1, 1);
+        checkSellReport(sellReport, 1, 0, Calendar.getInstance(), 1, "UNDEFINED");
+    }
 
-	@Test
-	public void testNeedRefill() {
-		Store store = new Store();
-		store.add("id-1", 3);
-		
-		try {
-			SellReport sellReport = store.sell("id-1", 2);
-			assertTrue(sellReport.needRefill());
-		} catch (ItemNotFoundException e) {
-			assertTrue(false);
-		} catch (NoMoreItemException e) {
-			assertTrue(false);
-		}
-	}
-	
+    @Test
+    public void sellOneItemWithPrice() throws Exception {
+        store.registerItemPrice(ITEM_1, 3f);
+        store.add(ITEM_1, 1);
+        SellReport sellReport = store.sell(ITEM_1, 1);
+        checkSellReport(sellReport, 1, 0, Calendar.getInstance(), 1, "3.0€");
+    }
 
-	@Test
-	public void testNeedRefill2() {
-		Store store = new Store();
-		store.add("id-1", 5);
-		
-		try {
-			SellReport sellReport = store.sell("id-1", 2);
-			int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-			if (day > 5 || day < 27) {
-				assertTrue(sellReport.needRefill());
-			} else {
-				assertFalse(sellReport.needRefill());
-			}
-		} catch (ItemNotFoundException e) {
-			assertTrue(false);
-		} catch (NoMoreItemException e) {
-			assertTrue(false);
-		}
-	}
-	
-	@Test
-	public void testPrint() {
-		Store store = new Store();
-		store.add("id-1", 3);
-		store.add("id-2", 2);
-		store.add("id-3", 1);
-		
-		String result = store.printInventory();
-		System.out.println(result);
-	}
+    private void checkSellReport(SellReport sellReport, int quantity, int remainingItems, Calendar date,
+            int expectedSoldItems, String expectedTotalPrice) {
+        assertThat(sellReport.getQuantity(), equalTo(quantity));
+        assertThat(sellReport.getRemainingItems(), equalTo(remainingItems));
+        assertThat(sellReport.getDate(), equalTo(date));
+        assertThat(sellReport.getSoldItems(), equalTo(expectedSoldItems));
+        assertThat(sellReport.getTotalPrice(), equalTo(expectedTotalPrice));
+    }
+
+    @Test
+    public void sellTwoItems() throws Exception {
+        store.add(ITEM_1, 3);
+        SellReport sellReport = store.sell(ITEM_1, 2);
+        checkSellReport(sellReport, 2, 1, Calendar.getInstance(), 2, "UNDEFINED");
+    }
+
+    @Test(expected=ItemNotFoundException.class)
+    public void testSellNotExistingItem() throws Exception {
+        store.add(ITEM_1, 1);
+
+        store.sell(ITEM_2, 1);
+    }
+
+    @Test(expected=NoMoreItemException.class)
+    public void testSellNoMore() throws Exception {
+        store.add(ITEM_1, 1);
+
+        store.sell(ITEM_1, 2);
+    }
+
+    @Test
+    public void testNeedRefillWhenNoMoreItemsToSell() throws Exception {
+        store.add(ITEM_1, 3);
+        SellReport sellReport = store.sell(ITEM_1, 3);
+        assertTrue(sellReport.needRefill());
+    }
+
+    @Test
+    public void testNeedRefillDependingOnCurrentDate() {
+        store.add(ITEM_1, 5);
+
+        try {
+            SellReport sellReport = store.sell(ITEM_1, 2);
+            int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+            if (day > 5 || day < 27) {
+                assertTrue(sellReport.needRefill());
+            } else {
+                assertFalse(sellReport.needRefill());
+            }
+        } catch (ItemNotFoundException e) {
+            assertTrue(false);
+        } catch (NoMoreItemException e) {
+            assertTrue(false);
+        }
+    }
+
+    @Test
+    public void testPrint() {
+        store.add(ITEM_1, 3);
+        store.add(ITEM_2, 2);
+        store.add("id-3", 1);
+
+        String result = store.printInventory();
+        System.out.println(result);
+    }
 
 }

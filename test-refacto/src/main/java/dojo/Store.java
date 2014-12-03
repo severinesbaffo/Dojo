@@ -52,7 +52,7 @@ public class Store {
 		inventory.put(itemId, total+nb);
 	}
 	
-	public Integer getItems(String id) throws ItemNotFoundException {
+	public Integer getNbItems(String id) throws ItemNotFoundException {
 		if (inventory.get(id) != null) {
 			return inventory.get(id);
 		}
