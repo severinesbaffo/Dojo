@@ -8,16 +8,24 @@ import java.util.*;
 
 import org.junit.*;
 
-@SuppressWarnings("unused")
+
+import static org.mockito.Mockito.*;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+
+
 public class StoreTest {
 
-    private static final String ITEM_2 = "id-2";
+    private static final String ITEM_3 = "id-3";
+	private static final String ITEM_2 = "id-2";
     private static final String ITEM_1 = "id-1";
     private Store store;
 
     @Before
     public void setUp() {
-        store = new Store();
+        store = new Store(true);
     }
 
     @Test(expected = ItemNotFoundException.class)
@@ -101,13 +109,15 @@ public class StoreTest {
     }
 
     @Test
-    public void testNeedRefillDependingOnCurrentDate() {
+    public void testNeedRefillDependingOnCurrentDate()  {
+
         store.add(ITEM_1, 5);
 
         try {
             SellReport sellReport = store.sell(ITEM_1, 2);
             int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
-            if (day > 5 || day < 27) {
+            if (day < 5 || day > 27) {
+
                 assertTrue(sellReport.needRefill());
             } else {
                 assertFalse(sellReport.needRefill());
@@ -119,14 +129,93 @@ public class StoreTest {
         }
     }
 
-    @Test
-    public void testPrint() {
-        store.add(ITEM_1, 3);
-        store.add(ITEM_2, 2);
-        store.add("id-3", 1);
 
-        String result = store.printInventory();
-        System.out.println(result);
+    @Test
+    public void testPrint() throws Exception {
+    	Store storeSpy = spy(store);
+    	store.registerItemPrice(ITEM_1, 3f);
+    	store.registerItemPrice(ITEM_3, 1.5f);
+        store.add(ITEM_1, 10);
+        store.add(ITEM_2, 5);
+        store.add(ITEM_3, 2);
+        store.sell(ITEM_2, 3);
+        store.sell(ITEM_3, 2);
+        
+        BufferedReader br = null;
+		try {
+	        storeSpy.printInventory();
+			String itemId;
+			String line;
+			br = new BufferedReader(new InputStreamReader(new FileInputStream(Store.INVENTORY_FILENAME), "UTF-8"));
+			while ((line = br.readLine()) != null) {
+				if (line.startsWith(Store.ITEM)) {
+					itemId = line.substring(Store.ITEM.length(),
+							line.indexOf(":") - 1);
+					if (itemId.equals(ITEM_1)) {
+						assertThat(line, not("NEED REFILL !!"));
+						if (line.contains("items remaining")) {
+							assertThat(line, equalTo("8 items remaining"));
+						}
+						if (line.startsWith("Last total price :")) {
+							assertThat(line,  equalTo("Last total price : 6.0€"));
+						}
+					}
+					if (itemId.equals(ITEM_2)) {
+						assertThat(line, not("NEED REFILL !!"));
+						if (line.contains("items remaining")) {
+							assertThat(line, equalTo("2 items remaining"));
+						}
+						if (line.startsWith("Last total price :")) {
+							assertThat(line,  equalTo("Last total price : UNDEFINED"));
+						}
+					}
+					if (itemId.equals(ITEM_3)) {
+						if (line.contains("items remaining")) {
+							assertThat(line, equalTo("0 items remaining"));
+						}
+						if (line.startsWith("Last total price :")) {
+							assertThat(line,  equalTo("Last total price : 3.0€"));
+						}
+					}
+				}
+			}
+		} finally {
+			br.close();
+		}
+		verify(storeSpy).sendInventory();
+		verify(storeSpy, never()).sendEmergencyRefillReports(anyList());
+    }
+
+    
+    @Test
+    public void testPrint2() throws Exception {
+    	Store storeSpy = spy(store);
+        
+        Calendar calendar1 = new GregorianCalendar();
+        calendar1.set(2014, 10, 25);
+        SellReport sellReport1 = new SellReport(calendar1, 2, 0, 2, 5f);
+        
+
+        Calendar calendar2 = new GregorianCalendar();
+        calendar2.set(2014, 11, 25);
+        SellReport sellReport2 = new SellReport(calendar2, 2, 10, 2, 5f);
+        Map<String, SellReport> sellReports = new HashMap<String, SellReport>();
+        sellReports.put(ITEM_1, sellReport1);
+        sellReports.put(ITEM_2, sellReport2);
+        
+        storeSpy.setLastSellReports(sellReports);
+        
+        store.add(ITEM_1, 0);
+        store.add(ITEM_2, 10);
+        
+        storeSpy.printInventory();
+        
+		verify(storeSpy).sendInventory();
+		List<SellReport> needRefillReports = new ArrayList<SellReport>();
+		needRefillReports.add(sellReport1);
+		
+		verify(storeSpy).sendEmergencyRefillReports(needRefillReports);
+        
     }
 
 }
